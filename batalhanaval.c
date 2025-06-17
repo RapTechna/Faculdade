@@ -13,10 +13,17 @@ void inicializarTabuleiro(int tab[TAB_SIZE][TAB_SIZE]) {
             tab[i][j] = 0;
 }
 
-// Imprime tabuleiro com legendas claras
+// Imprime tabuleiro com legendas claras e índices de linha e coluna
 void imprimirTabuleiro(int tab[TAB_SIZE][TAB_SIZE]) {
     printf("Tabuleiro (0=Agua, 3=Navio, 5=Area de Habilidade):\n\n");
+    
+    printf("   ");
+    for (int col = 0; col < TAB_SIZE; col++) 
+        printf("%d ", col);
+    printf("\n");
+
     for (int i = 0; i < TAB_SIZE; i++) {
+        printf("%2d ", i);  // Índice da linha
         for (int j = 0; j < TAB_SIZE; j++) {
             printf("%d ", tab[i][j]);
         }
@@ -25,22 +32,24 @@ void imprimirTabuleiro(int tab[TAB_SIZE][TAB_SIZE]) {
     printf("\n");
 }
 
-// Verifica se pode posicionar navio de tamanho 'tamanho' na posição (linha, coluna) com orientação 'orientacao'
-// Orientações: H (horizontal), V (vertical), D (diagonal principal), A (diagonal anti)
+// Verifica se pode posicionar navio no tabuleiro, mesma lógica sua
 int podePosicionar(int tab[TAB_SIZE][TAB_SIZE], int linha, int coluna, int tamanho, char orientacao) {
-    if (orientacao == 'H') {
+    if (linha < 0 || linha >= TAB_SIZE || coluna < 0 || coluna >= TAB_SIZE)
+        return 0;
+
+    if (orientacao == 'H' || orientacao == 'h') {
         if (coluna + tamanho > TAB_SIZE) return 0;
         for (int i = 0; i < tamanho; i++)
             if (tab[linha][coluna + i] == 3) return 0;
-    } else if (orientacao == 'V') {
+    } else if (orientacao == 'V' || orientacao == 'v') {
         if (linha + tamanho > TAB_SIZE) return 0;
         for (int i = 0; i < tamanho; i++)
             if (tab[linha + i][coluna] == 3) return 0;
-    } else if (orientacao == 'D') {
+    } else if (orientacao == 'D' || orientacao == 'd') {
         if (linha + tamanho > TAB_SIZE || coluna + tamanho > TAB_SIZE) return 0;
         for (int i = 0; i < tamanho; i++)
             if (tab[linha + i][coluna + i] == 3) return 0;
-    } else if (orientacao == 'A') {
+    } else if (orientacao == 'A' || orientacao == 'a') {
         if (linha + tamanho > TAB_SIZE || coluna - tamanho + 1 < 0) return 0;
         for (int i = 0; i < tamanho; i++)
             if (tab[linha + i][coluna - i] == 3) return 0;
@@ -50,125 +59,71 @@ int podePosicionar(int tab[TAB_SIZE][TAB_SIZE], int linha, int coluna, int taman
     return 1;
 }
 
-// Posiciona navio no tabuleiro conforme orientação
+// Posiciona navio no tabuleiro conforme orientação, igual ao seu código
 void posicionarNavio(int tab[TAB_SIZE][TAB_SIZE], int linha, int coluna, int tamanho, char orientacao) {
-    if (orientacao == 'H') {
+    if (orientacao == 'H' || orientacao == 'h') {
         for (int i = 0; i < tamanho; i++)
             tab[linha][coluna + i] = 3;
-    } else if (orientacao == 'V') {
+    } else if (orientacao == 'V' || orientacao == 'v') {
         for (int i = 0; i < tamanho; i++)
             tab[linha + i][coluna] = 3;
-    } else if (orientacao == 'D') {
+    } else if (orientacao == 'D' || orientacao == 'd') {
         for (int i = 0; i < tamanho; i++)
             tab[linha + i][coluna + i] = 3;
-    } else if (orientacao == 'A') {
+    } else if (orientacao == 'A' || orientacao == 'a') {
         for (int i = 0; i < tamanho; i++)
             tab[linha + i][coluna - i] = 3;
     }
 }
 
-// Cria matriz de área de efeito CONE (triângulo com ponta para baixo)
-void criarAreaCone(int area[AREA_SIZE][AREA_SIZE]) {
-    int meio = AREA_SIZE / 2;
-    for (int i = 0; i < AREA_SIZE; i++)
-        for (int j = 0; j < AREA_SIZE; j++)
-            area[i][j] = 0;
-
-    for (int i = 0; i < AREA_SIZE; i++) {
-        for (int j = meio - i; j <= meio + i; j++) {
-            if (j >= 0 && j < AREA_SIZE) area[i][j] = 1;
-        }
-    }
+// Função para ler uma posição do usuário com validação simples
+void lerPosicao(int *linha, int *coluna) {
+    printf("Informe linha (0-%d): ", TAB_SIZE - 1);
+    scanf("%d", linha);
+    printf("Informe coluna (0-%d): ", TAB_SIZE - 1);
+    scanf("%d", coluna);
 }
 
-// Cria matriz de área de efeito CRUZ
-void criarAreaCruz(int area[AREA_SIZE][AREA_SIZE]) {
-    int meio = AREA_SIZE / 2;
-    for (int i = 0; i < AREA_SIZE; i++)
-        for (int j = 0; j < AREA_SIZE; j++)
-            area[i][j] = 0;
-
-    for (int i = 0; i < AREA_SIZE; i++) {
-        area[meio][i] = 1;  // linha central
-        area[i][meio] = 1;  // coluna central
-    }
-}
-
-// Cria matriz de área de efeito OCTAEDRO (losango)
-void criarAreaOctaedro(int area[AREA_SIZE][AREA_SIZE]) {
-    int meio = AREA_SIZE / 2;
-    for (int i = 0; i < AREA_SIZE; i++)
-        for (int j = 0; j < AREA_SIZE; j++)
-            area[i][j] = 0;
-
-    for (int i = 0; i < AREA_SIZE; i++)
-        for (int j = 0; j < AREA_SIZE; j++)
-            if (abs(i - meio) + abs(j - meio) <= meio)
-                area[i][j] = 1;
-}
-
-// Aplica a área de efeito no tabuleiro centralizando em (linhaOrigem, colOrigem)
-// Marca células livres com HABILIDADE (5), sem sobrescrever navios (3)
-void aplicarAreaEfeito(int tab[TAB_SIZE][TAB_SIZE], int area[AREA_SIZE][AREA_SIZE], int linhaOrigem, int colOrigem) {
-    int meio = AREA_SIZE / 2;
-    for (int i = 0; i < AREA_SIZE; i++) {
-        for (int j = 0; j < AREA_SIZE; j++) {
-            if (area[i][j] == 1) {
-                int linhaTab = linhaOrigem - meio + i;
-                int colTab = colOrigem - meio + j;
-
-                if (linhaTab >= 0 && linhaTab < TAB_SIZE && colTab >= 0 && colTab < TAB_SIZE) {
-                    if (tab[linhaTab][colTab] == 0)
-                        tab[linhaTab][colTab] = HABILIDADE;
-                }
-            }
-        }
-    }
+// Função para ler orientação do usuário
+char lerOrientacao() {
+    char ori;
+    printf("Informe orientação do navio (H=Horizontal, V=Vertical, D=Diagonal principal, A=Diagonal anti): ");
+    scanf(" %c", &ori);
+    return ori;
 }
 
 int main() {
     int tabuleiro[TAB_SIZE][TAB_SIZE];
     inicializarTabuleiro(tabuleiro);
 
-    // Coordenadas e orientações dos navios
-    struct {
+    int naviosQtd = 4;
+
+    printf("Jogo Batalha Naval - Posicione seus %d navios de tamanho %d\n\n", naviosQtd, SHIP_SIZE);
+    imprimirTabuleiro(tabuleiro);
+
+    for (int i = 0; i < naviosQtd; i++) {
         int linha, coluna;
         char orientacao;
-    } navios[] = {
-        {1, 1, 'H'},
-        {4, 7, 'V'},
-        {6, 2, 'D'},
-        {0, 9, 'A'}
-    };
+        int valido = 0;
 
-    // Posiciona navios
-    for (int i = 0; i < 4; i++) {
-        if (podePosicionar(tabuleiro, navios[i].linha, navios[i].coluna, SHIP_SIZE, navios[i].orientacao)) {
-            posicionarNavio(tabuleiro, navios[i].linha, navios[i].coluna, SHIP_SIZE, navios[i].orientacao);
-        } else {
-            printf("Erro: Navio %d nao pode ser posicionado.\n", i+1);
-            return 1;
-        }
+        printf("Posicionando navio %d:\n", i + 1);
+
+        do {
+            lerPosicao(&linha, &coluna);
+            orientacao = lerOrientacao();
+
+            if (podePosicionar(tabuleiro, linha, coluna, SHIP_SIZE, orientacao)) {
+                posicionarNavio(tabuleiro, linha, coluna, SHIP_SIZE, orientacao);
+                valido = 1;
+                imprimirTabuleiro(tabuleiro);
+            } else {
+                printf("Posição ou orientação inválida para o navio. Tente novamente.\n");
+            }
+        } while (!valido);
     }
 
-    // Cria as matrizes das áreas de efeito
-    int cone[AREA_SIZE][AREA_SIZE], cruz[AREA_SIZE][AREA_SIZE], octaedro[AREA_SIZE][AREA_SIZE];
-    criarAreaCone(cone);
-    criarAreaCruz(cruz);
-    criarAreaOctaedro(octaedro);
-
-    // Posições de origem das habilidades
-    int origemConeLinha = 2, origemConeCol = 2;
-    int origemCruzLinha = 6, origemCruzCol = 7;
-    int origemOctaedroLinha = 8, origemOctaedroCol = 4;
-
-    // Aplica áreas de efeito
-    aplicarAreaEfeito(tabuleiro, cone, origemConeLinha, origemConeCol);
-    aplicarAreaEfeito(tabuleiro, cruz, origemCruzLinha, origemCruzCol);
-    aplicarAreaEfeito(tabuleiro, octaedro, origemOctaedroLinha, origemOctaedroCol);
-
-    // Imprime o tabuleiro final
-    imprimirTabuleiro(tabuleiro);
+    // Aqui você pode continuar com o resto do jogo, aplicar áreas, etc.
+    printf("Todos os navios posicionados com sucesso!\n");
 
     return 0;
 }
