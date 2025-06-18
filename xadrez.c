@@ -1,157 +1,128 @@
 #include <stdio.h>
+#include <ctype.h>
+#include <string.h>
 
 #define TAM 8
 
-// Função para mostrar o tabuleiro simples (apenas coordenadas)
-void mostrarTabuleiro() {
-    printf("  ");
-    for (int c = 1; c <= TAM; c++) {
-        printf(" %d ", c);
+char tabuleiro[TAM][TAM];
+
+// Inicializa o tabuleiro com peças fixas para teste
+void inicializarTabuleiro() {
+    // Limpa tabuleiro
+    for (int l = 0; l < TAM; l++) {
+        for (int c = 0; c < TAM; c++) {
+            tabuleiro[l][c] = '.';
+        }
     }
+
+    // Peças do jogador 1 (maiúsculas)
+    tabuleiro[0][0] = 'T'; // Torre
+    tabuleiro[0][2] = 'B'; // Bispo
+    tabuleiro[0][4] = 'R'; // Rainha
+    tabuleiro[0][6] = 'C'; // Cavalo
+
+    // Peças do jogador 2 (minúsculas)
+    tabuleiro[7][0] = 't';
+    tabuleiro[7][2] = 'b';
+    tabuleiro[7][4] = 'r';
+    tabuleiro[7][6] = 'c';
+}
+
+void exibirTabuleiro() {
+    printf("\n    ");
+    for (int c = 0; c < TAM; c++) printf(" %d ", c + 1);
     printf("\n");
 
-    for (int l = 1; l <= TAM; l++) {
-        printf("%d ", l);
-        for (int c = 1; c <= TAM; c++) {
-            printf(" . ");
+    for (int l = 0; l < TAM; l++) {
+        printf(" %d |", l + 1);
+        for (int c = 0; c < TAM; c++) {
+            printf(" %c ", tabuleiro[l][c]);
         }
-        printf("\n");
+        printf("|\n");
     }
     printf("\n");
 }
 
-// Função para imprimir movimentos da Torre a partir da posição (linha, coluna)
-void moverTorre(int linha, int coluna) {
-    printf("Movimentos possíveis da TORRE a partir de (%d, %d):\n", linha, coluna);
-
-    // Movimentos na mesma linha (horizontal)
-    for (int c = 1; c <= TAM; c++) {
-        if (c != coluna) {
-            printf("(%d, %d)\n", linha, c);
-        }
-    }
-    // Movimentos na mesma coluna (vertical)
-    for (int l = 1; l <= TAM; l++) {
-        if (l != linha) {
-            printf("(%d, %d)\n", l, coluna);
-        }
-    }
+// Verifica se a posição está dentro dos limites
+int dentroDoTabuleiro(int l, int c) {
+    return l >= 0 && l < TAM && c >= 0 && c < TAM;
 }
 
-// Função para imprimir movimentos do Bispo a partir da posição (linha, coluna)
-void moverBispo(int linha, int coluna) {
-    printf("Movimentos possíveis do BISPO a partir de (%d, %d):\n", linha, coluna);
+// Função genérica para verificar se movimento é válido
+int movimentoValido(char peca, int li, int ci, int lf, int cf) {
+    int dl = lf - li;
+    int dc = cf - ci;
 
-    // Diagonais: cima-esquerda, cima-direita, baixo-esquerda, baixo-direita
-    int l, c;
-
-    // Cima-Esquerda
-    l = linha - 1; c = coluna - 1;
-    while (l >= 1 && c >= 1) {
-        printf("(%d, %d)\n", l, c);
-        l--; c--;
+    switch (toupper(peca)) {
+        case 'T':
+            return (li == lf || ci == cf); // mesma linha ou coluna
+        case 'B':
+            return (abs(dl) == abs(dc));   // diagonais
+        case 'R':
+            return (li == lf || ci == cf || abs(dl) == abs(dc)); // torre + bispo
+        case 'C':
+            return ((abs(dl) == 2 && abs(dc) == 1) || (abs(dl) == 1 && abs(dc) == 2));
     }
-
-    // Cima-Direita
-    l = linha - 1; c = coluna + 1;
-    while (l >= 1 && c <= TAM) {
-        printf("(%d, %d)\n", l, c);
-        l--; c++;
-    }
-
-    // Baixo-Esquerda
-    l = linha + 1; c = coluna - 1;
-    while (l <= TAM && c >= 1) {
-        printf("(%d, %d)\n", l, c);
-        l++; c--;
-    }
-
-    // Baixo-Direita
-    l = linha + 1; c = coluna + 1;
-    while (l <= TAM && c <= TAM) {
-        printf("(%d, %d)\n", l, c);
-        l++; c++;
-    }
+    return 0;
 }
 
-// Função para imprimir movimentos da Rainha (combina torre + bispo)
-void moverRainha(int linha, int coluna) {
-    printf("Movimentos possíveis da RAINHA a partir de (%d, %d):\n", linha, coluna);
+// Executa um movimento se for válido
+int moverPeca(int jogador) {
+    int li, ci, lf, cf;
+    char peca;
 
-    // Torre (linha e coluna)
-    moverTorre(linha, coluna);
-    // Bispo (diagonais)
-    moverBispo(linha, coluna);
-}
+    printf("Jogador %d - informe a posição da peça que deseja mover (linha coluna): ", jogador);
+    scanf("%d %d", &li, &ci);
+    li--; ci--;
 
-// Função para imprimir movimentos do Cavalo a partir da posição (linha, coluna)
-void moverCavalo(int linha, int coluna) {
-    printf("Movimentos possíveis do CAVALO a partir de (%d, %d):\n", linha, coluna);
-
-    int movimentos[8][2] = {
-        {linha - 2, coluna - 1},
-        {linha - 2, coluna + 1},
-        {linha - 1, coluna - 2},
-        {linha - 1, coluna + 2},
-        {linha + 1, coluna - 2},
-        {linha + 1, coluna + 2},
-        {linha + 2, coluna - 1},
-        {linha + 2, coluna + 1},
-    };
-
-    for (int i = 0; i < 8; i++) {
-        int l = movimentos[i][0];
-        int c = movimentos[i][1];
-        if (l >= 1 && l <= TAM && c >= 1 && c <= TAM) {
-            printf("(%d, %d)\n", l, c);
-        }
+    if (!dentroDoTabuleiro(li, ci)) {
+        printf("Posição de origem inválida!\n");
+        return 0;
     }
+
+    peca = tabuleiro[li][ci];
+    if ((jogador == 1 && !isupper(peca)) || (jogador == 2 && !islower(peca))) {
+        printf("Essa peça não pertence ao jogador %d!\n", jogador);
+        return 0;
+    }
+
+    printf("Informe a posição de destino (linha coluna): ");
+    scanf("%d %d", &lf, &cf);
+    lf--; cf--;
+
+    if (!dentroDoTabuleiro(lf, cf)) {
+        printf("Destino fora do tabuleiro!\n");
+        return 0;
+    }
+
+    if (tabuleiro[lf][cf] != '.' &&
+        ((jogador == 1 && isupper(tabuleiro[lf][cf])) ||
+         (jogador == 2 && islower(tabuleiro[lf][cf])))) {
+        printf("Você não pode capturar sua própria peça!\n");
+        return 0;
+    }
+
+    if (!movimentoValido(peca, li, ci, lf, cf)) {
+        printf("Movimento inválido para a peça %c!\n", peca);
+        return 0;
+    }
+
+    // Executa movimento
+    tabuleiro[lf][cf] = peca;
+    tabuleiro[li][ci] = '.';
+    return 1;
 }
 
 int main() {
-    int linha, coluna, escolha;
+    int turno = 1;
+    inicializarTabuleiro();
 
-    mostrarTabuleiro();
-
-    printf("Escolha a peça para mover:\n");
-    printf("1 - Torre\n");
-    printf("2 - Bispo\n");
-    printf("3 - Rainha\n");
-    printf("4 - Cavalo\n");
-    printf("Digite o número da peça: ");
-    scanf("%d", &escolha);
-
-    if (escolha < 1 || escolha > 4) {
-        printf("Opção inválida.\n");
-        return 1;
-    }
-
-    printf("Informe a posição da peça (linha e coluna entre 1 e 8):\n");
-    printf("Linha: ");
-    scanf("%d", &linha);
-    printf("Coluna: ");
-    scanf("%d", &coluna);
-
-    if (linha < 1 || linha > TAM || coluna < 1 || coluna > TAM) {
-        printf("Posição inválida!\n");
-        return 1;
-    }
-
-    printf("\n");
-
-    switch (escolha) {
-        case 1:
-            moverTorre(linha, coluna);
-            break;
-        case 2:
-            moverBispo(linha, coluna);
-            break;
-        case 3:
-            moverRainha(linha, coluna);
-            break;
-        case 4:
-            moverCavalo(linha, coluna);
-            break;
+    while (1) {
+        exibirTabuleiro();
+        printf("----- Turno do Jogador %d -----\n", turno);
+        if (moverPeca(turno)) {
+            turno = (turno == 1) ? 2 : 1;
+        }
     }
 
     return 0;
