@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define TAM 8
 
 char tabuleiro[TAM][TAM];
 
-// Inicializa o tabuleiro com peças fixas para teste
 void inicializarTabuleiro() {
-    // Limpa tabuleiro
     for (int l = 0; l < TAM; l++) {
         for (int c = 0; c < TAM; c++) {
             tabuleiro[l][c] = '.';
@@ -16,10 +15,10 @@ void inicializarTabuleiro() {
     }
 
     // Peças do jogador 1 (maiúsculas)
-    tabuleiro[0][0] = 'T'; // Torre
-    tabuleiro[0][2] = 'B'; // Bispo
-    tabuleiro[0][4] = 'R'; // Rainha
-    tabuleiro[0][6] = 'C'; // Cavalo
+    tabuleiro[0][0] = 'T';
+    tabuleiro[0][2] = 'B';
+    tabuleiro[0][4] = 'R';
+    tabuleiro[0][6] = 'C';
 
     // Peças do jogador 2 (minúsculas)
     tabuleiro[7][0] = 't';
@@ -43,30 +42,50 @@ void exibirTabuleiro() {
     printf("\n");
 }
 
-// Verifica se a posição está dentro dos limites
 int dentroDoTabuleiro(int l, int c) {
     return l >= 0 && l < TAM && c >= 0 && c < TAM;
 }
 
-// Função genérica para verificar se movimento é válido
+// Verifica se o caminho está livre (para Torre, Bispo e Rainha)
+int caminhoLivre(int li, int ci, int lf, int cf) {
+    int dl = (lf - li) == 0 ? 0 : (lf - li) / abs(lf - li);
+    int dc = (cf - ci) == 0 ? 0 : (cf - ci) / abs(cf - ci);
+
+    int l = li + dl;
+    int c = ci + dc;
+
+    while (l != lf || c != cf) {
+        if (tabuleiro[l][c] != '.') return 0;
+        l += dl;
+        c += dc;
+    }
+
+    return 1;
+}
+
 int movimentoValido(char peca, int li, int ci, int lf, int cf) {
     int dl = lf - li;
     int dc = cf - ci;
 
     switch (toupper(peca)) {
         case 'T':
-            return (li == lf || ci == cf); // mesma linha ou coluna
+            if (li == lf || ci == cf)
+                return caminhoLivre(li, ci, lf, cf);
+            break;
         case 'B':
-            return (abs(dl) == abs(dc));   // diagonais
+            if (abs(dl) == abs(dc))
+                return caminhoLivre(li, ci, lf, cf);
+            break;
         case 'R':
-            return (li == lf || ci == cf || abs(dl) == abs(dc)); // torre + bispo
+            if ((li == lf || ci == cf || abs(dl) == abs(dc)))
+                return caminhoLivre(li, ci, lf, cf);
+            break;
         case 'C':
-            return ((abs(dl) == 2 && abs(dc) == 1) || (abs(dl) == 1 && abs(dc) == 2));
+            return (abs(dl) == 2 && abs(dc) == 1) || (abs(dl) == 1 && abs(dc) == 2);
     }
     return 0;
 }
 
-// Executa um movimento se for válido
 int moverPeca(int jogador) {
     int li, ci, lf, cf;
     char peca;
@@ -107,7 +126,6 @@ int moverPeca(int jogador) {
         return 0;
     }
 
-    // Executa movimento
     tabuleiro[lf][cf] = peca;
     tabuleiro[li][ci] = '.';
     return 1;
