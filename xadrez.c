@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <ctype.h>
-#include <string.h>
 #include <stdlib.h>
 
 #define TAM 8
@@ -15,10 +14,10 @@ void inicializarTabuleiro() {
     }
 
     // Peças do jogador 1 (maiúsculas)
-    tabuleiro[0][0] = 'T';
-    tabuleiro[0][2] = 'B';
-    tabuleiro[0][4] = 'R';
-    tabuleiro[0][6] = 'C';
+    tabuleiro[0][0] = 'T'; // Torre
+    tabuleiro[0][2] = 'B'; // Bispo
+    tabuleiro[0][4] = 'R'; // Rainha
+    tabuleiro[0][6] = 'C'; // Cavalo
 
     // Peças do jogador 2 (minúsculas)
     tabuleiro[7][0] = 't';
@@ -29,7 +28,9 @@ void inicializarTabuleiro() {
 
 void exibirTabuleiro() {
     printf("\n    ");
-    for (int c = 0; c < TAM; c++) printf(" %d ", c + 1);
+    for (int c = 0; c < TAM; c++) {
+        printf(" %d ", c + 1);
+    }
     printf("\n");
 
     for (int l = 0; l < TAM; l++) {
@@ -46,18 +47,19 @@ int dentroDoTabuleiro(int l, int c) {
     return l >= 0 && l < TAM && c >= 0 && c < TAM;
 }
 
-// Verifica se o caminho está livre (para Torre, Bispo e Rainha)
 int caminhoLivre(int li, int ci, int lf, int cf) {
-    int dl = (lf - li) == 0 ? 0 : (lf - li) / abs(lf - li);
-    int dc = (cf - ci) == 0 ? 0 : (cf - ci) / abs(cf - ci);
+    int dl = (lf > li) ? 1 : (lf < li) ? -1 : 0;
+    int dc = (cf > ci) ? 1 : (cf < ci) ? -1 : 0;
 
-    int l = li + dl;
-    int c = ci + dc;
+    li += dl;
+    ci += dc;
 
-    while (l != lf || c != cf) {
-        if (tabuleiro[l][c] != '.') return 0;
-        l += dl;
-        c += dc;
+    while (li != lf || ci != cf) {
+        if (tabuleiro[li][ci] != '.') {
+            return 0; // Caminho bloqueado
+        }
+        li += dl;
+        ci += dc;
     }
 
     return 1;
@@ -68,21 +70,20 @@ int movimentoValido(char peca, int li, int ci, int lf, int cf) {
     int dc = cf - ci;
 
     switch (toupper(peca)) {
-        case 'T':
-            if (li == lf || ci == cf)
-                return caminhoLivre(li, ci, lf, cf);
+        case 'T': // Torre
+            if ((li == lf || ci == cf) && caminhoLivre(li, ci, lf, cf)) return 1;
             break;
-        case 'B':
-            if (abs(dl) == abs(dc))
-                return caminhoLivre(li, ci, lf, cf);
+        case 'B': // Bispo
+            if (abs(dl) == abs(dc) && caminhoLivre(li, ci, lf, cf)) return 1;
             break;
-        case 'R':
-            if ((li == lf || ci == cf || abs(dl) == abs(dc)))
-                return caminhoLivre(li, ci, lf, cf);
+        case 'R': // Rainha
+            if (((li == lf || ci == cf) || abs(dl) == abs(dc)) && caminhoLivre(li, ci, lf, cf)) return 1;
             break;
-        case 'C':
-            return (abs(dl) == 2 && abs(dc) == 1) || (abs(dl) == 1 && abs(dc) == 2);
+        case 'C': // Cavalo
+            if ((abs(dl) == 2 && abs(dc) == 1) || (abs(dl) == 1 && abs(dc) == 2)) return 1;
+            break;
     }
+
     return 0;
 }
 
@@ -90,8 +91,12 @@ int moverPeca(int jogador) {
     int li, ci, lf, cf;
     char peca;
 
-    printf("Jogador %d - informe a posição da peça que deseja mover (linha coluna): ", jogador);
-    scanf("%d %d", &li, &ci);
+    printf("Jogador %d - Informe a posição da peça que deseja mover (linha coluna): ", jogador);
+    if (scanf("%d %d", &li, &ci) != 2) {
+        printf("Entrada inválida!\n");
+        while (getchar() != '\n'); // Limpa buffer
+        return 0;
+    }
     li--; ci--;
 
     if (!dentroDoTabuleiro(li, ci)) {
@@ -106,7 +111,11 @@ int moverPeca(int jogador) {
     }
 
     printf("Informe a posição de destino (linha coluna): ");
-    scanf("%d %d", &lf, &cf);
+    if (scanf("%d %d", &lf, &cf) != 2) {
+        printf("Entrada inválida!\n");
+        while (getchar() != '\n'); // Limpa buffer
+        return 0;
+    }
     lf--; cf--;
 
     if (!dentroDoTabuleiro(lf, cf)) {
@@ -126,6 +135,7 @@ int moverPeca(int jogador) {
         return 0;
     }
 
+    // Realiza movimento
     tabuleiro[lf][cf] = peca;
     tabuleiro[li][ci] = '.';
     return 1;
